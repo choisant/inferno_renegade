@@ -16,7 +16,18 @@ knitr::opts_chunk$set(
     collapse = TRUE,
     comment = "#>"
 )
+options(knitr.kable.NA = '')
 library(inferno)
+## Tol colour-blind-friendly palette
+palette(c(black='black',
+        red='#EE6677',
+        blue='#4477AA',
+        green='#228833',
+        yellow='#CCBB44',
+        purple='#AA3377',
+        cyan='#66CCEE',
+        grey='#BBBBBB',
+        midgrey='#888888'))
 ```
 
 ## Purpose
@@ -185,7 +196,7 @@ probability0 <- Pr(
 )
 ```
 
-The output of the `Pr()` function is a list of three objects, of which we discuss only two for the moment:
+The output of the `Pr()` function is a list of several objects, of which we discuss only two for the moment:
 
 - **`value`**: this is the value of the probability we wanted to know. In this case it is
 ```{r}
@@ -193,11 +204,11 @@ probability0$value
 ```
 that is, there is approximately a `r signif(probability0$value *100, 2)`% probability that the next treated female patient will have a MDS-UPDRS-III difference of exactly 0.
 
-- **`quantiles`**: these values tell us how much the probability could change, if your knowledge were updated by more clinical trials. They thus quantify the uncertainty of our present probabilistic conclusions. A future, updated probability has a 90% probability of lying between the two extreme (5% and 95%) quantile values, and a 50% probability of lying between the middle (25% and 75%) ones. In this case they are
+- **`quantiles`**: these values tell us how much the probability could change, if our knowledge were updated by more clinical trials. They thus quantify the uncertainty of our present probabilistic conclusions. A future, updated probability has a 89% probability of lying between the two extreme (5.5% and 94.5%) quantile values, and a 50% probability of lying between the middle (25% and 75%) ones q(these are typical intervals used in the Bayesian literature, see for instance [Makowski et al.](https://doi.org/10.21105/joss.01541)). In this case they are
 ```{r}
 probability0$quantiles
 ```
-that is, if we had many more clinical trials, the probability above could change to a value within around `r signif(probability0$quantiles[,,'5%'] * 100, 2)`% and `r signif(probability0$quantiles[,,'95%'] * 100, 2)`%.
+that is, if we had many more clinical trials, the probability above could change to a value within around `r signif(probability0$quantiles[,,'5.5%'] * 100, 2)`% and `r signif(probability0$quantiles[,,'94.5%'] * 100, 2)`%.
 
 \
 
@@ -209,26 +220,27 @@ probabilities <- Pr(
     learnt = learnt
 )
 ```
-Each probability thus obtained has two accompanying quantiles and related uncertainty.  Let us plot both:
+Each probability thus obtained has two accompanying quantiles and related uncertainty. Both can be visualized with the `plot()` function:
 ```{r}
-plotquantiles(x = (-30):30, y = probabilities$quantiles[,1,],
-    ylim = c(0, NA),
-    xlab = 'MDS-UPDRS-III difference', ylab = 'probability', col = 1)
-
-tplot(x = (-30):30, y = probabilities$values[,1], col = 1, add = TRUE)
-
-## add 0-change line
-abline(v = 0, lwd = 1, col = 'yellow')
+plot(probabilities)
 ```
+
 Two aspects of this plot are relevant for our investigation:
 
 - There seems to be slightly more probability mass towards negative MDS-UPDRS-III differences -- which means an improvement in the degree of disability. We shall quantify this further in a moment.
 
 - However, it is also clear that further clinical trials could lead to a quite different probability distribution. This is shown by the breadth of the quantile range.
 
+Another way to graphically represent and see potential variability of the result if more trials were available, is to plot some examples -- say 100 -- of how the results could differ. Such examples are stored in the third object, `samples` given by the `Pr()` function:
+```{r}
+plot(probabilities, variability = 'samples',
+    ylim = c(0, max(probabilities$quantiles)) # keep same y-range as before
+    )
+```
+
 \
 
-Let as therefore ask a more interesting question, which can be a quantitative counterpart of our initial question "Does the NAD-replenishment therapy have an effect on females?". We ask: *will the next treated female patient experience a MDS-UPDRS-III difference equal to $-1$ or less?"*. We therefore want the probability
+Let us ask a more interesting question, which can be a quantitative counterpart of our initial question "Does the NAD-replenishment therapy have an effect on females?". We ask: *will the next treated female patient experience a MDS-UPDRS-III difference equal to $-1$ or less?"*. We therefore want the probability
 $$
 \mathrm{Pr}(\text{MDS-UPDRS-III diff.} \le -1 \:\vert\:
 \text{Sex} = \text{Female}, \text{Treatment} = \text{NR}, \mathrm{data})
@@ -254,7 +266,7 @@ probFNR <- signif(probDecrease$value[1,1] * 100, 2)
 ```
 
 
-Further clinical trials, however could update this probability to a new value between `r signif(probDecrease$quantiles[1,1,'5%'] * 100, 2)`% and `r signif(probDecrease$quantiles[1,1,'95%'] * 100, 2)`%:
+Further clinical trials, however could update this probability to a new value between `r signif(probDecrease$quantiles[1,1,'5.5%'] * 100, 2)`% and `r signif(probDecrease$quantiles[1,1,'94.5%'] * 100, 2)`%:
 ```{r}
 probDecrease$quantiles[1,1,]
 ```
@@ -275,23 +287,23 @@ probabilitiesPlacebo <- Pr(
 
 Let's plot these probabilities, together with their variability (only the most extreme case), on top of the ones previously obtained for the treated case:
 ```{r}
-plotquantiles(x = (-30):30, y = probabilities$quantiles[,1, c('5%', '95%')],
+plotquantiles(x = (-30):30, y = probabilities$quantiles[,1, c('5.5%', '94.5%')],
     ylim = c(0, NA),
-    xlab = 'MDS-UPDRS-III difference', ylab = 'probability', col = 1)
+    xlab = 'MDS-UPDRS-III difference', ylab = 'probability', col = 3)
 
-plotquantiles(x = (-30):30, y = probabilitiesPlacebo$quantiles[,1, c('5%', '95%')],
+plotquantiles(x = (-30):30, y = probabilitiesPlacebo$quantiles[,1, c('5.5%', '94.5%')],
     col = 2, add = TRUE)
 
-tplot(x = (-30):30, y = probabilities$values[,1], col = 1, add = TRUE)
+flexiplot(x = (-30):30, y = probabilities$values[,1], col = 3, lwd = 2, add = TRUE)
 
-tplot(x = (-30):30, y = probabilitiesPlacebo$values[,1],
+flexiplot(x = (-30):30, y = probabilitiesPlacebo$values[,1],
     col = 2, lty = 2, add = TRUE)
 
 ## add 0-change line
-abline(v = 0, lwd = 1, col = 'yellow')
+abline(v = 0, lwd = 1, col = 5)
 
 legend('topright', legend = c('NR, Female', 'Placebo, Female'),
-    bty = 'n', lty = 1:2, col = 1:2)
+    bty = 'n', lty = 1:2, col = 3:2)
 ```
 
 There does not seem to be any difference that stands out between the treated and non-treated case.
@@ -309,7 +321,7 @@ We find that the probability of a decrease in the disability score for a non-tre
 ```{r}
 probDecreasePlacebo$value
 ```
-or approximately `r signif(probDecreasePlacebo$value * 100, 2)`%. Further clinical trials, however could update this probability to a value between `r signif(probDecreasePlacebo$quantiles[1,1,'5%'] * 100, 2)`% and `r signif(probDecreasePlacebo$quantiles[1,1,'95%'] * 100, 2)`%:
+or approximately `r signif(probDecreasePlacebo$value * 100, 2)`%. Further clinical trials, however could update this probability to a value between `r signif(probDecreasePlacebo$quantiles[1,1,'5.5%'] * 100, 2)`% and `r signif(probDecreasePlacebo$quantiles[1,1,'94.5%'] * 100, 2)`%:
 ```{r}
 probDecreasePlacebo$quantiles[1,1,]
 ```
@@ -352,23 +364,23 @@ probDecreaseAgePlacebo <- tailPr(
 
 We can plot the probabilities of an MDS-UPDRS-III decrease against that patient's age, with one plot for each treatment group:
 ```{r}
-plotquantiles(x = 25:80, y = probDecreaseAge$quantiles[1,, c('5%', '95%')],
+plotquantiles(x = 25:80, y = probDecreaseAge$quantiles[1,, c('5.5%', '94.5%')],
     ylim = c(0, NA),
-    xlab = 'age', ylab = 'probability of MDS-UPDRS-III decr.', col = 1)
+    xlab = 'age', ylab = 'probability of MDS-UPDRS-III decr.', col = 3)
 
-plotquantiles(x = 25:80, y = probDecreaseAgePlacebo$quantiles[1,, c('5%', '95%')],
+plotquantiles(x = 25:80, y = probDecreaseAgePlacebo$quantiles[1,, c('5.5%', '94.5%')],
     col = 2, add = TRUE)
 
-tplot(x = 25:80, y = probDecreaseAge$values[1,], col = 1, add = TRUE)
+flexiplot(x = 25:80, y = probDecreaseAge$values[1,], col = 3, lwd = 2, add = TRUE)
 
-tplot(x = 25:80, y = probDecreaseAgePlacebo$values[1,],
-    col = 2, lty = 2, add = TRUE)
+flexiplot(x = 25:80, y = probDecreaseAgePlacebo$values[1,],
+    col = 2, lwd = 2, lty = 2, add = TRUE)
 
 ## add 50%-probability line
-abline(h = 0.5, lwd = 1, col = 'yellow')
+abline(h = 0.5, lwd = 1, col = 5)
 
 legend('topright', legend = c('NR, Female', 'Placebo, Female'),
-    bty = 'n', lty = 1:2, col = 1:2)
+    bty = 'n', lty = 1:2, col = 3:2)
 ```
 
 This plot shows some interesting aspects:
@@ -391,23 +403,24 @@ probabilitiesMale <- Pr(
     learnt = learnt
 )
 
-plotquantiles(x = (-30):30, y = probabilitiesMale$quantiles[,1, c('5%', '95%')],
+plotquantiles(x = (-30):30, y = probabilitiesMale$quantiles[,1, c('5.5%', '94.5%')],
     ylim = c(0, NA),
-    xlab = 'MDS-UPDRS-III difference', ylab = 'probability', col = 5)
+    xlab = 'MDS-UPDRS-III difference', ylab = 'probability', col = 7)
 
-plotquantiles(x = (-30):30, y = probabilitiesMale$quantiles[,2, c('5%', '95%')],
+plotquantiles(x = (-30):30, y = probabilitiesMale$quantiles[,2, c('5.5%', '94.5%')],
     col = 6, add = TRUE)
 
-tplot(x = (-30):30, y = probabilitiesMale$values[,1], col = 5, add = TRUE)
+flexiplot(x = (-30):30, y = probabilitiesMale$values[,1],
+    col = 7, lwd = 2, add = TRUE)
 
-tplot(x = (-30):30, y = probabilitiesMale$values[,2],
-    col = 6, lty = 2, add = TRUE)
+flexiplot(x = (-30):30, y = probabilitiesMale$values[,2],
+    col = 6, lwd = 2, lty = 2, add = TRUE)
 
 ## add 0-change line
-abline(v = 0, lwd = 1, col = 'yellow')
+abline(v = 0, lwd = 1, col = 5)
 
 legend('topright', legend = c('NR, Male', 'Placebo, Male'),
-    bty = 'n', lty = 1:2, col = 5:6)
+    bty = 'n', lty = 1:2, col = 7:6)
 ```
 
 
@@ -427,45 +440,47 @@ probMaleDecreaseAgePlacebo <- tailPr(
 )
 
 
-plotquantiles(x = 25:80, y = probMaleDecreaseAge$quantiles[1,, c('5%', '95%')],
+plotquantiles(x = 25:80, y = probMaleDecreaseAge$quantiles[1,, c('5.5%', '94.5%')],
     ylim = c(0, NA),
-    xlab = 'age', ylab = 'probability of MDS-UPDRS-III decr.', col = 5)
+    xlab = 'age', ylab = 'probability of MDS-UPDRS-III decr.', col = 7)
 
-plotquantiles(x = 25:80, y = probMaleDecreaseAgePlacebo$quantiles[1,, c('5%', '95%')],
+plotquantiles(x = 25:80, y = probMaleDecreaseAgePlacebo$quantiles[1,, c('5.5%', '94.5%')],
     col = 6, add = TRUE)
 
-tplot(x = 25:80, y = probMaleDecreaseAge$values[1,], col = 5, add = TRUE)
+flexiplot(x = 25:80, y = probMaleDecreaseAge$values[1,],
+    col = 7, lwd = 2, add = TRUE)
 
-tplot(x = 25:80, y = probMaleDecreaseAgePlacebo$values[1,],
-    col = 6, lty = 2, add = TRUE)
+flexiplot(x = 25:80, y = probMaleDecreaseAgePlacebo$values[1,],
+    col = 6, lwd = 2, lty = 2, add = TRUE)
 
 ## add 50%-probability line
-abline(h = 0.5, lwd = 1, col = 'yellow')
+abline(h = 0.5, lwd = 1, col = 5)
 
 legend('topright', legend = c('NR, Male', 'Placebo, Male'),
-    bty = 'n', lty = 1:2, col = 5:6)
+    bty = 'n', lty = 1:2, col = 7:6)
 ```
 
 Finally let's compare treated female vs male patients, per age:
 
 ```{r}
-plotquantiles(x = 25:80, y = probDecreaseAge$quantiles[1,, c('5%', '95%')],
+plotquantiles(x = 25:80, y = probDecreaseAge$quantiles[1,, c('5.5%', '94.5%')],
     ylim = c(0, NA),
-    xlab = 'age', ylab = 'probability of MDS-UPDRS-III decr.', col = 1)
+    xlab = 'age', ylab = 'probability of MDS-UPDRS-III decr.', col = 3)
 
-plotquantiles(x = 25:80, y = probMaleDecreaseAge$quantiles[1,, c('5%', '95%')],
-    col = 5, add = TRUE)
+plotquantiles(x = 25:80, y = probMaleDecreaseAge$quantiles[1,, c('5.5%', '94.5%')],
+    col = 7, add = TRUE)
 
-tplot(x = 25:80, y = probDecreaseAge$values[1,], col = 1, add = TRUE)
+flexiplot(x = 25:80, y = probDecreaseAge$values[1,],
+    col = 3, lwd = 2, add = TRUE)
 
-tplot(x = 25:80, y = probMaleDecreaseAge$values[1,],
-    col = 5, lty = 2, add = TRUE)
+flexiplot(x = 25:80, y = probMaleDecreaseAge$values[1,],
+    col = 7, lwd = 2, lty = 2, add = TRUE)
 
 ## add 50%-probability line
-abline(h = 0.5, lwd = 1, col = 'yellow')
+abline(h = 0.5, lwd = 1, col = 5)
 
 legend('topright', legend = c('NR, Female', 'NR, Male'),
-    bty = 'n', lty = 1:2, col = c(1, 5))
+    bty = 'n', lty = 1:2, col = c(3, 7))
 ```
 
 

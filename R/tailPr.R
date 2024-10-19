@@ -5,10 +5,9 @@
 #' @param Y matrix or data.table: set of values of variates of which we want
 #'   the joint probability of. One variate per column, one set of values per row.
 #' @param X matrix or data.table or `NULL`: set of values of variates on which we want to condition the joint probability of `Y`. If `NULL` (default), no conditioning is made (except for conditioning on the learning dataset and prior assumptions). One variate per column, one set of values per row.
-#' @param learnt Either a string with the name of a directory or full
-#'   path for an 'learnt.rds' object, or such an object itself
-#' @param quantiles numeric vector, between 0 and 1, or `NULL`: desired quantiles of the variability of the tail probability for `Y`. Default `c(0.05, 0.25, 0.75, 0.95)`, that is, the 5%, 25%, 75%, 95% quantiles.
-#' @param nsamples integer or `NULL`: desired number of samples of the variability of the probability for `Y`. Default `100`.
+#' @param learnt Either a string with the name of a directory or full path for a 'learnt.rds' object, produced by the \code{\link{learn}} function, or such an object itself.
+#' @param quantiles numeric vector, between 0 and 1, or `NULL`: desired quantiles of the variability of the probability for `Y`. Default `c(0.055, 0.25, 0.75, 0.945)`, that is, the 5.5%, 25%, 75%, 94.5% quantiles (these are typical quantile values in the Bayesian literature: they give 50% and 89% credibility intervals, which correspond to 1 shannons and 0.5 shannons of uncertainty). If `NULL`, no quantiles are calculated.
+#' @param nsamples integer or `NULL` or `"all"`: desired number of samples of the variability of the probability for `Y`. If `NULL`, no samples are reported. If `"all"` (or `Inf`), all samples obtained by the \code{\link{learn}} function are used. Default `100`.
 #' @param parallel logical or integer: whether to use pre-existing parallel
 #'   workers, or how many to create and use. Default `TRUE`.
 #' @param lower.tail logical: calculate `P(Y <= y)`? (`TRUE`, default) Or `P(Y > y)`? (`FALSE`).
@@ -16,8 +15,9 @@
 #'   Default `FALSE`.
 #' @param usememory logical: save partial results to disc, to avoid crashes?
 #'   Default `TRUE`.
+#' @param keepYX logical, default `TRUE`: keep a copy of the `Y` and `X` arguments in the output? This is used for the plot method.
 #'
-#' @return A list of: (1) a matrix with the probabilities P(Y|X,data,assumptions), for all combinations of values of `Y` (rows) and `X` (columns); (2) an array with the variability quantiles (3rd dimension of the array) for such probabilities; (3) an array with the variability samples (3rd dimension of the array) for such probabilities.
+#' @return A list of class `probability`, consisting of the elements `values`, and possibly the elements `quantiles` (if non-`NULL` argument `quantiles`), `samples` (if non-`NULL` argument `nsample`), `Y`, `X`. Element `values`: a matrix with the probabilities P(Y <= y |X,data,assumptions), for all combinations of values of `Y` (rows) and `X` (columns). Element `quantiles`: an array with the variability quantiles (3rd dimension of the array) for such probabilities. Element `samples`: an array with the variability samples (3rd dimension of the array) for such probabilities. Elements `Y`, `X`: copies of the `Y` and `X` arguments.
 #'
 #' @import parallel foreach doParallel
 #'
@@ -26,12 +26,13 @@ tailPr <- function(
     Y,
     X = NULL,
     learnt,
-    quantiles = c(0.05, 0.25, 0.75, 0.95),
+    quantiles = c(0.055, 0.25, 0.75, 0.945),
     nsamples = 100L,
     parallel = TRUE,
     lower.tail = TRUE,
     silent = TRUE,
-    usememory = TRUE
+    usememory = TRUE,
+    keepYX = TRUE
 ) {
     if (!silent) {
         cat('\n')
@@ -295,6 +296,16 @@ tailPr <- function(
     ##     na.rm = TRUE
     ## ))
 
+    if(is.numeric(nsamples)){
+        if(is.na(nsamples) || nsamples < 1) {
+            nsamples <- NULL
+        } else if(!is.finite(nsamples)) {
+            nsamples <- nmcsamples
+        }
+    } else if (is.character(nsamples) && nsamples == 'all'){
+        nsamples <- nmcsamples
+    }
+
     if(!is.null(nsamples)){
         sampleseq <- round(seq(1, nmcsamples, length.out = nsamples))
     }
@@ -376,5 +387,14 @@ tailPr <- function(
         dimnames(out$samples) <- list(Y = NULL, X = NULL, sampleseq)
     }
 
+    if(isTRUE(keepYX)){
+    ## save Y and X values in the output; useful for plotting methods
+        out$Y <- Y
+        out$X <- X
+    }
+
+    out$lowertail <- lower.tail
+
+    class(out) <- 'probability'
     out
 }

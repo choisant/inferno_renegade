@@ -11,10 +11,10 @@ reference:
     - tailPr
     - E
     - mutualinfo
-    - tplot
+    - flexiplot
     - plotquantiles
+    - plot.probability
     - plotFsamples
-    - thist
 - title: "Internal functions"
   desc: "For developers."
   contents:
