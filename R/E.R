@@ -1,8 +1,9 @@
+#' Is this trash?
 #' Calculate posterior probabilities
 #'
 #' This function calculates the probability P(Y | X, data), where Y and X are two (non overlapping) sets of joint variates. The function also gives quantiles about the possible variability of the probability P(Y | X, newdata, data) that we could have if more learning data were provided, as well as a number of samples of the possible values of such probabilities. If several joint values are given for Y or X, the function will create a 2D grid of results for all possible compbinations of the given Y and X values.
 #'
-#' @param Y1names String vector: joint variates
+#' @param Ynames String vector: joint variates
 #'   the joint probability of. One variate per column, one set of values per row.
 #' @param X matrix or data.table or `NULL`: set of values of variates on which we want to condition the joint probability of `Y`. If `NULL` (default), no conditioning is made (except for conditioning on the learning dataset and prior assumptions). One variate per column, one set of values per row.
 #' @param learnt Either a string with the name of a directory or full
@@ -100,7 +101,7 @@ E <- function(
         stop('overlap in Y and X variates\n')
     }
 
-    nY <- nrow(Y)
+    nY <- nrow(Ynames)
     nX <- max(nrow(X), 1L)
 
     ## determine if parallel computation is possible and needed

@@ -83,6 +83,8 @@ Pr <- function(
     ## More consistency checks
     Yv <- colnames(Y)
     if (!all(Yv %in% auxmetadata$name)) {
+        cat('Possible variates: \n')
+        cat(auxmetadata$name, '\n')
         stop('unknown Y variates\n')
     }
     if (length(unique(Yv)) != length(Yv)) {

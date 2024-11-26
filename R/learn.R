@@ -87,7 +87,7 @@ learn <- function(
     showKtraces = FALSE,
     showAlphatraces = FALSE,
     hyperparams = list(
-        ncomponents = 64,
+        ncomponents = 74,
         minalpha = -4,
         maxalpha = 4,
         byalpha = 1,
