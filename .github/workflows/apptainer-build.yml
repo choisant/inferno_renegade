@@ -6,6 +6,10 @@ on:
     branches:
       - 'main'
 
+  push:
+    branches:
+        - 'main'
+
 jobs:
   build-test-container:
     runs-on: ubuntu-latest

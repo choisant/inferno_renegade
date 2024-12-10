@@ -40,8 +40,7 @@ learn(
 \item{data}{A dataset, given as a \code{\link[base]{data.frame}}
 or as a file path to a csv file.}
 
-\item{metadata}{A metadata object, given either as a data.frame object,
-or as a file pa to a csv file.}
+\item{metadata}{A metadata object, given as a file path to a csv file.}
 
 \item{auxdata}{A larger dataset, given as a data.frame
 or as a file path to a csv file. Such a dataset

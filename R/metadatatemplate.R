@@ -93,11 +93,20 @@ metadatatemplate <- function(
 
     ## Read datafile if it exists
     datafile <- NULL
-    if (is.character(data) && file.exists(data)) {
-        datafile <- data
-        data <- read.csv(datafile, na.strings = '')
+    if (is.character(data)) {
+        if (file.exists(data) && grepl("\\.csv$", data)) {
+            datafile <- data
+            data <- read.csv(datafile, na.strings = '')
+        } else {
+            stop(paste0(data, " is not a valid file. Please input a valid CSV file."))
+        }
     }
     data <- as.data.frame(data)
+
+    # Exit if no data
+    if (dim(data) == NULL) {
+        stop('No data to process. Please input a valid CSV file or data frame object.')
+    }
 
 #### Prepare empty metadata frame
     metadata <- as.data.frame(

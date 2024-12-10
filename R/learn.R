@@ -2,8 +2,7 @@
 #'
 #' @param data A dataset, given as a \code{\link[base]{data.frame}}
 #' or as a file path to a csv file.
-#' @param metadata A metadata object, given either as a data.frame object,
-#' or as a file pa to a csv file.
+#' @param metadata A metadata object, given as a file path to a csv file.
 #' @param auxdata A larger dataset, given as a data.frame
 #'   or as a file path to a csv file. Such a dataset
 #'   would be too many to use in the Monte Carlo sampling,
@@ -124,7 +123,7 @@ learn <- function(
 #### Argument-consistency checks
 ##################################################
 
-#### Determine the status of parallel processing
+#### Set up and determine the status of parallel processing
   
     workers <- setupParallel(parallel)
     ncores <- workers$ncores
@@ -164,61 +163,6 @@ learn <- function(
         cat('Increasing number of samples to', nsamples, 'for efficiency\n')
     }
 
-
-    ## ## nsamples & nchains
-    ##   ## Doesn't make sense to have more cores than chains
-    ##   if(nchains < ncores) {
-    ##     ncores <- nchains
-    ##   }
-    ##   ## Ineffective is some core has fewer chains than others
-    ##   nchainspercore <- ceiling(nchains / ncores)
-    ##   if (nchainspercore * ncores > nchains) {
-    ##     nchains <- nchainspercore * ncores
-    ##     cat('Increasing number of chains to', nchains, '\n')
-    ##   }
-    ##   ## Ineffective to have chains with different required samples
-    ##   nsamplesperchain <- ceiling(nsamples / nchains)
-    ##   if(nsamplesperchain * nchains > nsamples) {
-    ##     nsamples <- nchains * nsamplesperchain
-    ##     cat('Increasing number of samples to', nsamples, '\n')
-    ##   }
-    ##
-    ##   ## nsamples & nsamplesperchain
-    ## } else if (!missing(nsamples) && missing(nchains) &&
-    ##            !missing(nsamplesperchain)) {
-    ##   nchains <- ceiling(nsamples / nsamplesperchain)
-    ##   if(nchains < ncores) {
-    ##     ncores <- nchains
-    ##   }
-    ##   nchainspercore <- ceiling(nchains / ncores)
-    ##   if(nchainspercore * ncores > nchains) {
-    ##     nchains <- nchainspercore*ncores
-    ##   }
-    ##   if(nsamplesperchain * nchains > nsamples) {
-    ##     nsamples <- nchains * nsamplesperchain
-    ##     cat('Increasing number of samples to', nsamples, '\n')
-    ##   }
-    ##
-    ##   ## nchains & nsamplesperchain
-    ## } else if (missing(nsamples) && !missing(nchains) &&
-    ##            !missing(nsamplesperchain)) {
-    ##   if(nchains < ncores){
-    ##     ncores <- nchains
-    ##   }
-    ##   nchainspercore <- ceiling(nchains / ncores)
-    ##   if(nchainspercore * ncores > nchains){
-    ##     nchains <- nchainspercore * ncores
-    ##     cat('Increasing number of chains to',nchains,'\n')
-    ##   }
-    ##   nsamples <- nchains * nsamplesperchain
-    ##
-    ##   ## The user set all these three arguments or only one
-    ## } else if (!(missing(nsamples) && missing(nchains) &&
-    ##            missing(nsamplesperchain))) {
-    ##   stop('Please specify exactly two among "nsamples", "nchains", "nsamplesperchain"')
-    ## }
-
-
     if (is.numeric(thinning) && thinning > 0) {
         thinning <- ceiling(thinning)
     } else if (!is.null(thinning)) {
@@ -243,7 +187,6 @@ learn <- function(
 
 #### Read metadata
     ## Check whether argument 'metadata' is a string for a file name
-    ## otherwise we assume it's a data.frame or similar object
     if (is.character(metadata) && file.exists(metadata)) {
         metadata <- read.csv(metadata, na.strings = '',
             colClasses=c(
@@ -255,8 +198,7 @@ learn <- function(
                 minincluded = 'character',
                 maxincluded = 'character'
                 ))
-    }
-    metadata <- as.data.frame(metadata)
+    } else {stop("Please provide a valid CSV file as metadata.")}
 
 #### Dataset
     ## Check if 'data' is given
@@ -265,13 +207,9 @@ learn <- function(
         ## otherwise we assume it is an object
         datafile <- NULL
         if (is.character(data)) {
-            ## add '.csv' if missing
-            datafile <- paste0(sub('.csv$', '', data), '.csv')
             if (file.exists(data)) {
                 data <- read.csv(datafile, na.strings = '')
-            } else {
-                stop('Cannot find data file')
-            }
+            } else stop(paste0('Cannot find data file ', datafile))
         }
         data <- as.data.frame(data)
         rownames(data) <- NULL
@@ -286,7 +224,8 @@ learn <- function(
 
         ## Drop variates in data that are not in the metadata file
         if (!all(colnames(data) %in% metadata[['name']])) {
-            cat('Warning: data have additional variates. Dropping them.\n')
+            additionalVars = setdiff(colnames(data), metadata[['name']])
+            cat('Warning: data have additional variates: Dropping them.\n')
             subvar <- intersect(colnames(data), metadata[['name']])
             data <- data[, subvar, drop = FALSE]
             rm(subvar)
