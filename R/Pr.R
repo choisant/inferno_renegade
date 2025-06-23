@@ -268,9 +268,9 @@ Pr <- function(
                         nB = XnB, iB = XiB, tB = XtB
                     ) # rows=components, columns=samples
 
-                lprobX <- apply(lprobX, 2, function(xx) {
-                    xx - max(xx[is.finite(xx)])
-                })
+                #lprobX <- apply(lprobX, 2, function(xx) {
+                #    xx - max(xx[is.finite(xx)])
+                #})
 
                 saveRDS(lprobX,
                     file.path(temporarydir,

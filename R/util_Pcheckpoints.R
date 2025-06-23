@@ -102,9 +102,10 @@ util_Pcheckpoints <- function(
                     )
         }
 #### Output: rows=components, columns=samples
-        lprobX <- apply(log(mcsamples$W), 2, function(xx) {
-            xx - max(xx[is.finite(xx)])
-        })
+        #lprobX <- apply(log(mcsamples$W), 2, function(xx) {
+        #    xx - max(xx[is.finite(xx)])
+        #})
+        lprobX <- log(learnt$W)
         colSums(exp(lprobX + lprobY)) / colSums(exp(lprobX))
     }
 }

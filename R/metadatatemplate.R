@@ -104,7 +104,7 @@ metadatatemplate <- function(
     data <- as.data.frame(data)
 
     # Exit if no data
-    if (dim(data) == NULL) {
+    if (is.null(dim(data))) {
         stop('No data to process. Please input a valid CSV file or data frame object.')
     }
 
